@@ -5,7 +5,6 @@
 import { register } from "tsconfig-paths";
 import path from "path";
 import { mock } from "bun:test";
-import { writable, derived } from "svelte/store";
 
 // --------------------------------------
 // Alias resolution for Bun
@@ -36,7 +35,6 @@ register({
 // --------------------------------------
 // SvelteKit mocks
 // --------------------------------------
-
 mock.module('$app/environment', () => ({
 	browser: true,
 	building: false,
@@ -67,9 +65,8 @@ mock.module('$app/paths', () => ({
 }));
 
 // --------------------------------------
-// Logger mocks (all variants used in repo)
+// Logger mocks
 // --------------------------------------
-
 const fakeLogger = {
 	fatal: () => {},
 	error: () => {},
@@ -85,55 +82,90 @@ mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
 mock.module('@utils/logger', () => ({ logger: fakeLogger }));
 
 // --------------------------------------
-// Store mocks (must match real exports)
+// REAL LoadingStore implementation
 // --------------------------------------
+class LoadingStore {
+	private operations = new Set<string>();
 
-// loadingStore.svelte
-const LoadingStore = writable(false);
+	start(op = "default") {
+		this.operations.add(op);
+	}
 
-const loadingOperations = {
-	start: () => LoadingStore.set(true),
-	stop: () => LoadingStore.set(false)
-};
+	stop(op = "default") {
+		this.operations.delete(op);
+	}
+
+	clear() {
+		this.operations.clear();
+	}
+
+	get isLoading() {
+		return this.operations.size > 0;
+	}
+
+	get size() {
+		return this.operations.size;
+	}
+}
 
 mock.module('@stores/loadingStore.svelte', () => ({
-	default: LoadingStore,
 	LoadingStore,
-	loadingOperations
+	default: LoadingStore
 }));
 
-// screenSizeStore.svelte
-const ScreenSize = writable("desktop");
+// --------------------------------------
+// REAL ScreenSize implementation
+// --------------------------------------
+const ScreenSize = {
+	XS: "XS",
+	SM: "SM",
+	MD: "MD",
+	LG: "LG",
+	XL: "XL",
+	XXL: "XXL"
+} as const;
 
-function getScreenSizeName() {
-	return "desktop";
+function getScreenSizeName(width: number) {
+	if (width < 640) return ScreenSize.XS;
+	if (width < 768) return ScreenSize.SM;
+	if (width < 1024) return ScreenSize.MD;
+	if (width < 1280) return ScreenSize.LG;
+	if (width < 1536) return ScreenSize.XL;
+	return ScreenSize.XXL;
 }
 
 mock.module('@stores/screenSizeStore.svelte', () => ({
-	default: ScreenSize,
 	ScreenSize,
-	getScreenSizeName
+	getScreenSizeName,
+	default: ScreenSize
 }));
 
-// system store
-const system = writable({});
+// --------------------------------------
+// REAL system store implementation
+// --------------------------------------
+let systemState: any = {};
 
-function setSystemState(value: any) {
-	system.set(value);
+function setSystemState(state: any) {
+	systemState = state;
 }
 
-const isServiceHealthy = derived(system, () => true);
+function isServiceHealthy() {
+	return true;
+}
+
+function startServiceInitialization() {
+	return true;
+}
 
 mock.module('@stores/system/index', () => ({
-	system,
 	setSystemState,
-	isServiceHealthy
+	isServiceHealthy,
+	startServiceInitialization
 }));
 
 // --------------------------------------
-// Real utils passthrough (with logger fixed)
+// Real utils passthrough
 // --------------------------------------
-
 mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
 mock.module('@utils/errorHandling', () => import('../../src/utils/errorHandling'));
 mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
@@ -142,7 +174,6 @@ mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'
 // --------------------------------------
 // Svelte 5 runes
 // --------------------------------------
-
 // @ts-ignore
 globalThis.$state = (initial: any) => initial;
 // @ts-ignore
