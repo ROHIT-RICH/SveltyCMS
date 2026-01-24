@@ -68,10 +68,10 @@ function getInstallCommand(packageName: string, packageManager: string): string 
 /**
  * Validates the database type and returns the corresponding package name.
  */
-function getDriverPackage(dbType: string): { package: string; valid: boolean } {
+function getDriverPackage(dbType: string): { driverPackage: string; valid: boolean } {
 	const packageName = DRIVER_PACKAGES[dbType as DatabaseType];
 	return {
-		package: packageName || '',
+		driverPackage: packageName || '',
 		valid: Boolean(packageName)
 	};
 }
@@ -128,7 +128,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
-		const { package: packageName, valid } = getDriverPackage(dbType);
+		const { driverPackage: packageName, valid } = getDriverPackage(dbType);
 
 		if (!valid) {
 			return json(
@@ -155,11 +155,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			await import(/* @vite-ignore */ packageName);
 			logger.info(`Driver ${packageName} is already installed`);
 			return json({
-				success: true,
-				message: m.api_install_driver_already_installed({ driver: packageName }),
-				package: packageName,
-				alreadyInstalled: true
-			});
+	success: true,
+	message: m.api_install_driver_already_installed({ driver: packageName }),
+	driverPackage: packageName,
+	installed: true
+});
 		} catch {
 			// Package not installed, proceed with installation
 		}
@@ -168,22 +168,23 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (installResult.success) {
 			return json({
-				success: true,
-				message: m.api_install_driver_success({ driver: packageName }),
-				package: packageName,
-				output: installResult.output
-			});
+	success: true,
+	message: m.api_install_driver_success({ driver: packageName }),
+	driverPackage: packageName,
+	installed: true,
+	output: installResult.output
+});
 		} else {
 			return json(
-				{
-					success: false,
-					error: m.api_install_driver_failed({ driver: packageName, error: installResult.error || 'Unknown error' }),
-					package: packageName,
-					details: installResult.error,
-					output: installResult.output
-				},
-				{ status: 500 }
-			);
+	{
+		success: false,
+		error: m.api_install_driver_failed(...),
+		driverPackage: packageName,
+		details: installResult.error,
+		output: installResult.output
+	},
+	{ status: 500 }
+);
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
