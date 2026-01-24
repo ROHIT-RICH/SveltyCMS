@@ -1,193 +1,248 @@
 /**
- * @file tests/bun/setup.ts
+ * @file tests/bun/stores/loadingStore.test.ts
+ * @description Tests for global loading state management
  */
 
-import { register } from "tsconfig-paths";
-import path from "path";
-import { mock } from "bun:test";
+// @ts-expect-error - Bun test is available at runtime
+import { describe, it, expect, beforeEach } from 'bun:test';
+import { LoadingStore, loadingOperations } from '@stores/loadingStore.svelte';
 
-// --------------------------------------
-// Alias resolution for Bun
-// --------------------------------------
-register({
-	baseUrl: path.resolve("./"),
-	paths: {
-		"@paraglide/*": ["src/paraglide/*"],
-		"@api/*": ["src/routes/api/*"],
-		"@auth/*": ["src/databases/auth/*"],
-		"@collections/*": ["config/collections/*"],
-		"@components/*": ["src/components/*"],
-		"@content/*": ["src/content/*"],
-		"@databases/*": ["src/databases/*"],
-		"@hooks/*": ["src/hooks/*"],
-		"@root/*": ["*"],
-		"@services/*": ["src/services/*"],
-		"@src/*": ["src/*"],
-		"@static/*": ["static/*"],
-		"@stores/*": ["src/stores/*"],
-		"@themes/*": ["src/themes/*"],
-		"@types/*": ["src/types/*"],
-		"@utils/*": ["src/utils/*"],
-		"@widgets/*": ["src/widgets/*"]
-	}
+describe('Loading Store - Basic Operations', () => {
+	let store: LoadingStore;
+
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
+
+	it('should initialize with no loading state', () => {
+		expect(store.isLoading).toBe(false);
+		expect(store.loadingReason).toBe(null);
+		expect(store.loadingStack.size).toBe(0);
+	});
+
+	it('should start loading operation', () => {
+		store.startLoading(loadingOperations.dataFetch);
+
+		expect(store.isLoading).toBe(true);
+		expect(store.loadingReason).toBe('data-fetch');
+		expect(store.loadingStack.has('data-fetch')).toBe(true);
+	});
+
+	it('should stop loading operation', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.stopLoading(loadingOperations.dataFetch);
+
+		expect(store.isLoading).toBe(false);
+		expect(store.loadingReason).toBe(null);
+		expect(store.loadingStack.size).toBe(0);
+	});
+
+	it('should handle custom loading reasons', () => {
+		const customReason = 'custom-operation';
+		store.startLoading(customReason);
+
+		expect(store.isLoading).toBe(true);
+		expect(store.loadingReason).toBe(customReason);
+	});
 });
 
-// --------------------------------------
-// SvelteKit mocks
-// --------------------------------------
-mock.module('$app/environment', () => ({
-	browser: true,
-	building: false,
-	dev: true,
-	version: 'test'
-}));
+describe('Loading Store - Concurrent Operations', () => {
+	let store: LoadingStore;
 
-mock.module('$app/stores', () => ({
-	getStores: () => ({}),
-	page: { subscribe: (fn: any) => fn({}) },
-	navigating: { subscribe: (fn: any) => fn(null) },
-	updated: { subscribe: (fn: any) => fn(false) }
-}));
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
 
-mock.module('$app/navigation', () => ({
-	goto: () => Promise.resolve(),
-	invalidate: () => Promise.resolve(),
-	invalidateAll: () => Promise.resolve(),
-	preloadData: () => Promise.resolve(),
-	preloadCode: () => Promise.resolve(),
-	beforeNavigate: () => {},
-	afterNavigate: () => {}
-}));
+	it('should handle multiple concurrent operations', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.authentication);
+		store.startLoading(loadingOperations.formSubmission);
 
-mock.module('$app/paths', () => ({
-	base: '',
-	assets: ''
-}));
+		expect(store.isLoading).toBe(true);
+		expect(store.loadingStack.size).toBe(3);
+	});
 
-// --------------------------------------
-// Logger mocks
-// --------------------------------------
-const fakeLogger = {
-	fatal: () => {},
-	error: () => {},
-	warn: () => {},
-	info: () => {},
-	debug: () => {},
-	trace: () => {},
-	channel: () => fakeLogger
-};
+	it('should remain loading until all operations complete', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.authentication);
 
-mock.module('@src/utils/logger.server', () => ({ logger: fakeLogger }));
-mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
-mock.module('@utils/logger', () => ({ logger: fakeLogger }));
+		store.stopLoading(loadingOperations.dataFetch);
+		expect(store.isLoading).toBe(true);
 
-// --------------------------------------
-// Loading Store (fully compatible with tests)
-// --------------------------------------
-class LoadingStore {
-	private operations = new Set<string>();
+		store.stopLoading(loadingOperations.authentication);
+		expect(store.isLoading).toBe(false);
+	});
 
-	start(op = "default") {
-		this.operations.add(op);
-	}
+	it('should update loading reason as operations complete', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.authentication);
 
-	stop(op = "default") {
-		this.operations.delete(op);
-	}
+		expect(store.loadingReason).toBe('authentication');
 
-	clear() {
-		this.operations.clear();
-	}
+		store.stopLoading(loadingOperations.dataFetch);
+		expect(store.loadingReason).toBe('authentication');
+	});
 
-	get isLoading() {
-		return this.operations.size > 0;
-	}
-}
+	it('should handle duplicate start calls gracefully', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.dataFetch);
 
-const loadingOperations = {
-	start: (store: LoadingStore, op?: string) => store.start(op),
-	stop: (store: LoadingStore, op?: string) => store.stop(op)
-};
+		expect(store.loadingStack.size).toBe(1);
 
-mock.module('@stores/loadingStore.svelte', () => ({
-	LoadingStore,
-	loadingOperations,
-	default: LoadingStore
-}));
+		store.stopLoading(loadingOperations.dataFetch);
+		expect(store.isLoading).toBe(false);
+	});
+});
 
-// --------------------------------------
-// Screen Size Store (fixed enum values)
-// --------------------------------------
-const ScreenSize = {
-	XS: "XS",
-	SM: "SM",
-	MD: "MD",
-	LG: "LG",
-	XL: "XL",
-	XXL: "2XL" // 🔥 this was the final failing issue
-} as const;
+describe('Loading Store - Context Tracking', () => {
+	let store: LoadingStore;
 
-function getScreenSizeName(width: number) {
-	if (width < 640) return ScreenSize.XS;
-	if (width < 768) return ScreenSize.SM;
-	if (width < 1024) return ScreenSize.MD;
-	if (width < 1280) return ScreenSize.LG;
-	if (width < 1536) return ScreenSize.XL;
-	return ScreenSize.XXL;
-}
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
 
-mock.module('@stores/screenSizeStore.svelte', () => ({
-	ScreenSize,
-	getScreenSizeName,
-	default: ScreenSize
-}));
+	it('should track loading context', () => {
+		store.startLoading(loadingOperations.authentication, 'User login form');
 
-// --------------------------------------
-// System Store (all required exports)
-// --------------------------------------
-let systemState: any = {};
+		expect(store.isLoading).toBe(true);
+		expect(store.loadingReason).toBe('authentication');
+	});
 
-function setSystemState(state: any) {
-	systemState = state;
-}
+	it('should support different contexts for same operation', () => {
+		store.startLoading(loadingOperations.dataFetch, 'Loading users');
+		store.startLoading(loadingOperations.dataFetch, 'Loading posts');
 
-function resetSystemState() {
-	systemState = {};
-}
+		expect(store.isLoading).toBe(true);
+	});
+});
 
-function isServiceHealthy() {
-	return true;
-}
+describe('Loading Store - Timeout Protection', () => {
+	let store: LoadingStore;
 
-function startServiceInitialization() {
-	return true;
-}
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
 
-mock.module('@stores/system/index', () => ({
-	setSystemState,
-	resetSystemState,
-	isServiceHealthy,
-	startServiceInitialization
-}));
+	it('should accept custom timeout', () => {
+		store.startLoading(loadingOperations.dataFetch, 'Test', 5000);
+		expect(store.isLoading).toBe(true);
+	});
 
-// --------------------------------------
-// Real utils passthrough
-// --------------------------------------
-mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
-mock.module('@utils/errorHandling', () => import('../../src/utils/errorHandling'));
-mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
-mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'));
+	it('should use default timeout when not specified', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		expect(store.isLoading).toBe(true);
+	});
 
-// --------------------------------------
-// Svelte 5 runes
-// --------------------------------------
-// @ts-ignore
-globalThis.$state = (initial: any) => initial;
-// @ts-ignore
-globalThis.$derived = (fn: any) => fn();
-// @ts-ignore
-globalThis.$effect = () => {};
-// @ts-ignore
-globalThis.$effect.root = (fn: any) => fn();
-// @ts-ignore
-globalThis.$props = () => ({});
+	it('should allow disabling timeout with 0', () => {
+		store.startLoading(loadingOperations.dataFetch, undefined, 0);
+		expect(store.isLoading).toBe(true);
+	});
+});
+
+describe('Loading Store - Clear Operations', () => {
+	let store: LoadingStore;
+
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
+
+	it('should clear all loading states', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.authentication);
+		store.startLoading(loadingOperations.formSubmission);
+
+		store.clearLoading();
+
+		expect(store.isLoading).toBe(false);
+		expect(store.loadingStack.size).toBe(0);
+		expect(store.loadingReason).toBe(null);
+	});
+
+	it('should clear loading even with pending operations', () => {
+		store.startLoading(loadingOperations.dataFetch);
+		store.startLoading(loadingOperations.authentication);
+
+		store.clearLoading();
+
+		expect(store.loadingStack.size).toBe(0);
+	});
+});
+
+describe('Loading Store - Operation Types', () => {
+	let store: LoadingStore;
+
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
+
+	it('should handle all predefined operation types', () => {
+		Object.values(loadingOperations).forEach((operation) => {
+			store.startLoading(operation);
+			expect(store.loadingStack.has(operation)).toBe(true);
+			store.stopLoading(operation);
+		});
+
+		expect(store.isLoading).toBe(false);
+	});
+
+	it('should handle navigation operations', () => {
+		store.startLoading(loadingOperations.navigation);
+		expect(store.loadingReason).toBe('navigation');
+		store.stopLoading(loadingOperations.navigation);
+	});
+
+	it('should handle image upload operations', () => {
+		store.startLoading(loadingOperations.imageUpload);
+		expect(store.loadingReason).toBe('image-upload');
+		store.stopLoading(loadingOperations.imageUpload);
+	});
+
+	it('should handle collection load operations', () => {
+		store.startLoading(loadingOperations.collectionLoad);
+		expect(store.loadingReason).toBe('collection-load');
+		store.stopLoading(loadingOperations.collectionLoad);
+	});
+});
+
+describe('Loading Store - Edge Cases', () => {
+	let store: LoadingStore;
+
+	beforeEach(() => {
+		store = new LoadingStore();
+	});
+
+	it('should handle stopping non-existent operation', () => {
+		store.stopLoading('non-existent');
+
+		expect(store.isLoading).toBe(false);
+		expect(store.loadingStack.size).toBe(0);
+	});
+
+	it('should handle empty string operation', () => {
+		store.startLoading('');
+
+		expect(typeof store.isLoading).toBe('boolean');
+	});
+
+	it('should maintain state integrity across multiple operations', () => {
+		const ops = [
+			loadingOperations.dataFetch,
+			loadingOperations.authentication,
+			loadingOperations.formSubmission,
+			loadingOperations.configSave
+		];
+
+		ops.forEach((op) => store.startLoading(op));
+		expect(store.loadingStack.size).toBe(4);
+
+		store.stopLoading(ops[0]);
+		store.stopLoading(ops[1]);
+		expect(store.loadingStack.size).toBe(2);
+		expect(store.isLoading).toBe(true);
+
+		store.stopLoading(ops[2]);
+		store.stopLoading(ops[3]);
+		expect(store.loadingStack.size).toBe(0);
+		expect(store.isLoading).toBe(false);
+	});
+});
