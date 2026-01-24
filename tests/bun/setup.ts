@@ -89,31 +89,44 @@ mock.module('@utils/logger', () => ({ logger: fakeLogger }));
 // --------------------------------------
 
 // loadingStore.svelte
-const loading = writable(false);
-export const loadingOperations = {
-	start: () => loading.set(true),
-	stop: () => loading.set(false)
+const LoadingStore = writable(false);
+
+const loadingOperations = {
+	start: () => LoadingStore.set(true),
+	stop: () => LoadingStore.set(false)
 };
 
 mock.module('@stores/loadingStore.svelte', () => ({
-	default: loading,
+	default: LoadingStore,
+	LoadingStore,
 	loadingOperations
 }));
 
 // screenSizeStore.svelte
-export const ScreenSize = writable("desktop");
+const ScreenSize = writable("desktop");
+
+function getScreenSizeName() {
+	return "desktop";
+}
 
 mock.module('@stores/screenSizeStore.svelte', () => ({
 	default: ScreenSize,
-	ScreenSize
+	ScreenSize,
+	getScreenSizeName
 }));
 
 // system store
 const system = writable({});
+
+function setSystemState(value: any) {
+	system.set(value);
+}
+
 const isServiceHealthy = derived(system, () => true);
 
 mock.module('@stores/system/index', () => ({
 	system,
+	setSystemState,
 	isServiceHealthy
 }));
 
