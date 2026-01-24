@@ -1,15 +1,14 @@
 /**
  * @file tests/bun/setup.ts
- * @description Global test setup file for Bun test runner
  */
 
 import { register } from "tsconfig-paths";
 import path from "path";
 import { mock } from "bun:test";
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 
 // --------------------------------------
-// Force alias resolution for Bun tests
+// Alias resolution for Bun
 // --------------------------------------
 register({
 	baseUrl: path.resolve("./"),
@@ -35,7 +34,7 @@ register({
 });
 
 // --------------------------------------
-// Mock SvelteKit built-in modules
+// SvelteKit mocks
 // --------------------------------------
 
 mock.module('$app/environment', () => ({
@@ -68,7 +67,7 @@ mock.module('$app/paths', () => ({
 }));
 
 // --------------------------------------
-// Mock logger (both alias styles used in repo)
+// Logger mocks (all variants used in repo)
 // --------------------------------------
 
 const fakeLogger = {
@@ -78,37 +77,48 @@ const fakeLogger = {
 	info: () => {},
 	debug: () => {},
 	trace: () => {},
-	channel: () => ({
-		fatal: () => {},
-		error: () => {},
-		warn: () => {},
-		info: () => {},
-		debug: () => {},
-		trace: () => {}
-	})
+	channel: () => fakeLogger
 };
 
 mock.module('@src/utils/logger.server', () => ({ logger: fakeLogger }));
 mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
+mock.module('@utils/logger', () => ({ logger: fakeLogger }));
 
 // --------------------------------------
-// Fix failing store imports
+// Store mocks (must match real exports)
 // --------------------------------------
+
+// loadingStore.svelte
+const loading = writable(false);
+export const loadingOperations = {
+	start: () => loading.set(true),
+	stop: () => loading.set(false)
+};
 
 mock.module('@stores/loadingStore.svelte', () => ({
-	default: writable(false)
+	default: loading,
+	loadingOperations
 }));
+
+// screenSizeStore.svelte
+export const ScreenSize = writable("desktop");
 
 mock.module('@stores/screenSizeStore.svelte', () => ({
-	default: writable("desktop")
+	default: ScreenSize,
+	ScreenSize
 }));
 
+// system store
+const system = writable({});
+const isServiceHealthy = derived(system, () => true);
+
 mock.module('@stores/system/index', () => ({
-	system: writable({})
+	system,
+	isServiceHealthy
 }));
 
 // --------------------------------------
-// Fix failing utils imports
+// Real utils passthrough (with logger fixed)
 // --------------------------------------
 
 mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
@@ -117,7 +127,7 @@ mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
 mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'));
 
 // --------------------------------------
-// Mock Svelte 5 runes
+// Svelte 5 runes
 // --------------------------------------
 
 // @ts-ignore
