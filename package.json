@@ -22,7 +22,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"check:watch": " svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "bun run test:unit",
-		"test:unit": "bun test --preload ./tests/bun/setup.ts tests/bun/services tests/bun/utils tests/bun/stores tests/bun/widgets",
+		"test:unit": "bun test --config ./bunfig.toml --preload ./tests/bun/setup.ts tests/bun/services tests/bun/utils tests/bun/stores tests/bun/widgets",
 		"test:integration": "bun run scripts/run-integration-tests.ts",
 		"test:integration:run": "wait-on http://localhost:4173 && bun run scripts/seed-test-db.ts && bun test --preload ./tests/bun/setup.ts tests/bun/api tests/bun/databases tests/bun/hooks",
 		"test:e2e": "concurrently -k -s last \"bun run dev\" \"bun run test:e2e:run\"",
