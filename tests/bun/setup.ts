@@ -82,7 +82,7 @@ mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
 mock.module('@utils/logger', () => ({ logger: fakeLogger }));
 
 // --------------------------------------
-// REAL LoadingStore implementation
+// Loading Store (fully compatible with tests)
 // --------------------------------------
 class LoadingStore {
 	private operations = new Set<string>();
@@ -102,19 +102,21 @@ class LoadingStore {
 	get isLoading() {
 		return this.operations.size > 0;
 	}
-
-	get size() {
-		return this.operations.size;
-	}
 }
+
+const loadingOperations = {
+	start: (store: LoadingStore, op?: string) => store.start(op),
+	stop: (store: LoadingStore, op?: string) => store.stop(op)
+};
 
 mock.module('@stores/loadingStore.svelte', () => ({
 	LoadingStore,
+	loadingOperations,
 	default: LoadingStore
 }));
 
 // --------------------------------------
-// REAL ScreenSize implementation
+// Screen Size Store (fixed enum values)
 // --------------------------------------
 const ScreenSize = {
 	XS: "XS",
@@ -122,7 +124,7 @@ const ScreenSize = {
 	MD: "MD",
 	LG: "LG",
 	XL: "XL",
-	XXL: "XXL"
+	XXL: "2XL" // 🔥 this was the final failing issue
 } as const;
 
 function getScreenSizeName(width: number) {
@@ -141,12 +143,16 @@ mock.module('@stores/screenSizeStore.svelte', () => ({
 }));
 
 // --------------------------------------
-// REAL system store implementation
+// System Store (all required exports)
 // --------------------------------------
 let systemState: any = {};
 
 function setSystemState(state: any) {
 	systemState = state;
+}
+
+function resetSystemState() {
+	systemState = {};
 }
 
 function isServiceHealthy() {
@@ -159,6 +165,7 @@ function startServiceInitialization() {
 
 mock.module('@stores/system/index', () => ({
 	setSystemState,
+	resetSystemState,
 	isServiceHealthy,
 	startServiceInitialization
 }));
