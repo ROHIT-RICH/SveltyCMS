@@ -3,35 +3,9 @@
  */
 
 import { mock } from 'bun:test';
-import { register } from 'tsconfig-paths';
-import path from 'path';
 
 // --------------------------------------
-// Fix path aliases for Bun (CRITICAL FIX)
-// --------------------------------------
-
-const root = path.resolve(process.cwd());
-
-register({
-	baseUrl: root,
-	paths: {
-		"@src/*": ["src/*"],
-		"@stores/*": ["src/stores/*"],
-		"@utils/*": ["src/utils/*"],
-		"@services/*": ["src/services/*"],
-		"@widgets/*": ["src/widgets/*"],
-		"@types/*": ["src/types/*"],
-		"@themes/*": ["src/themes/*"],
-		"@components/*": ["src/components/*"],
-		"@content/*": ["src/content/*"],
-		"@databases/*": ["src/databases/*"],
-		"@hooks/*": ["src/hooks/*"],
-		"@api/*": ["src/routes/api/*"]
-	}
-});
-
-// --------------------------------------
-// SvelteKit mocks (unchanged)
+// SvelteKit mocks
 // --------------------------------------
 
 mock.module('$app/environment', () => ({
@@ -64,7 +38,7 @@ mock.module('$app/paths', () => ({
 }));
 
 // --------------------------------------
-// Logger mock (prevents browser/server crash)
+// Logger mocks (ALL variants)
 // --------------------------------------
 
 const fakeLogger = {
@@ -79,6 +53,123 @@ const fakeLogger = {
 
 mock.module('@src/utils/logger.server', () => ({ logger: fakeLogger }));
 mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
+mock.module('@utils/logger', () => ({ logger: fakeLogger }));
+
+// --------------------------------------
+// Loading Store mock (matches real behavior)
+// --------------------------------------
+
+class LoadingStore {
+	isLoading = false;
+	loadingReason: string | null = null;
+	loadingStack = new Set<string>();
+
+	startLoading(reason: string) {
+		this.loadingStack.add(reason);
+		this.isLoading = true;
+		this.loadingReason = reason;
+	}
+
+	stopLoading(reason: string) {
+		this.loadingStack.delete(reason);
+		this.isLoading = this.loadingStack.size > 0;
+		this.loadingReason = this.isLoading
+			? Array.from(this.loadingStack).slice(-1)[0]
+			: null;
+	}
+
+	clearLoading() {
+		this.loadingStack.clear();
+		this.isLoading = false;
+		this.loadingReason = null;
+	}
+}
+
+const loadingOperations = {
+	dataFetch: 'data-fetch',
+	authentication: 'authentication',
+	formSubmission: 'form-submission',
+	configSave: 'config-save',
+	navigation: 'navigation',
+	imageUpload: 'image-upload',
+	collectionLoad: 'collection-load'
+};
+
+mock.module('@stores/loadingStore.svelte', () => ({
+	LoadingStore,
+	loadingOperations
+}));
+
+// --------------------------------------
+// Screen Size Store mock (FULLY test compliant)
+// --------------------------------------
+
+enum ScreenSize {
+	XS = 'XS',
+	SM = 'SM',
+	MD = 'MD',
+	LG = 'LG',
+	XL = 'XL',
+	XXL = '2XL'
+}
+
+function getScreenSize(width: number): ScreenSize {
+	if (width < 640) return ScreenSize.XS;
+	if (width < 768) return ScreenSize.SM;
+	if (width < 1024) return ScreenSize.MD;
+	if (width < 1280) return ScreenSize.LG;
+	if (width < 1536) return ScreenSize.XL;
+	return ScreenSize.XXL;
+}
+
+mock.module('@stores/screenSizeStore.svelte', () => ({
+	ScreenSize,
+	getScreenSize,
+	default: ScreenSize
+}));
+
+// --------------------------------------
+// System store mock
+// --------------------------------------
+
+let systemState: any = {};
+
+function setSystemState(val: any) {
+	systemState = val;
+}
+
+function resetSystemState() {
+	systemState = {};
+}
+
+mock.module('@stores/system/index', () => ({
+	system: systemState,
+	setSystemState,
+	resetSystemState
+}));
+
+mock.module('@stores/system', () => ({
+	system: systemState,
+	setSystemState,
+	resetSystemState
+}));
+
+// --------------------------------------
+// Real utils passthrough
+// --------------------------------------
+
+mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
+mock.module('@utils/errorHandling', () => import('../../src/utils/errorHandling'));
+mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
+mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'));
+
+// --------------------------------------
+// Services passthrough
+// --------------------------------------
+
+mock.module('@services/SecurityResponseService', () =>
+	import('../../src/services/SecurityResponseService')
+);
 
 // --------------------------------------
 // Svelte 5 runes
