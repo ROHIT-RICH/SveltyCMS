@@ -88,7 +88,9 @@ export async function hashPassword(password: string): Promise<string> {
 		throw new Error('Argon2 not available - server-side only');
 	}
 
-	return argon2.hash(password, {
+	// ✅ Fix: normalize empty password instead of throwing
+	const safePassword = password ?? '';
+	return argon2.hash(safePassword, {
 		...argon2Config,
 		type: argon2.argon2id
 	});
