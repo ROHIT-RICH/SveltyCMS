@@ -26,6 +26,7 @@
  */
 
 import { logger } from '@utils/logger';
+const EMPTY_PASSWORD = '__EMPTY_PASSWORD_INTERNAL__';
 
 // Import argon2 and crypto (server-side only)
 let argon2: typeof import('argon2') | null = null;
@@ -88,10 +89,9 @@ export async function hashPassword(password: string): Promise<string> {
 		throw new Error('Argon2 not available - server-side only');
 	}
 
-	// ✅ normalize empty password for tests
-	const safePassword = password === '' ? '__EMPTY__' : password;
+	const normalized = password === '' ? EMPTY_PASSWORD : password;
 
-	return argon2.hash(safePassword, {
+	return argon2.hash(normalized, {
 		...argon2Config,
 		type: argon2.argon2id
 	});
@@ -110,8 +110,9 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 		throw new Error('Argon2 not available - server-side only');
 	}
 
-	const safePassword = password === '' ? '__EMPTY__' : password;
-	return argon2.verify(hash, safePassword);
+	const normalized = password === '' ? EMPTY_PASSWORD : password;
+
+	return argon2.verify(hash, normalized);
 }
 
 /**
