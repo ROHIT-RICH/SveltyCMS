@@ -299,6 +299,12 @@ mock.module('@services/SecurityResponseService', () =>
 // Fix relative imports used internally by Bun/tests
 // --------------------------------------
 
+mock.module('src/utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('src/utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
+mock.module('src/utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
+mock.module('src/utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
+
+
 mock.module('../../src/utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
 mock.module('../../src/utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
 mock.module('../../src/utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
