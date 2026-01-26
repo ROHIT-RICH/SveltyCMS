@@ -372,7 +372,7 @@ export async function hashPassword(password: string): Promise<string> {
 
 	const normalized = password === '' ? EMPTY_PASSWORD : password;
 
-	return argon2.hash(normalized, {
+	return argon2.hash(Buffer.from(normalized, 'utf8'), {
 		...argon2Config,
 		type: argon2.argon2id
 	});
@@ -385,7 +385,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 	const normalized = password === '' ? EMPTY_PASSWORD : password;
 
-	return argon2.verify(hash, normalized);
+	return argon2.verify(hash, Buffer.from(normalized, 'utf8'));
 }
 
 export async function deriveKey(password: string, salt: Buffer): Promise<Buffer> {
