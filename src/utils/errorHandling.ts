@@ -1,3 +1,5 @@
+console.log('LOADED errorHandling.ts from', import.meta.url);
+
 /**
  * @file src/utils/errorHandling.ts
  * @description Robust error handling utilities for Svelte 5 applications.
