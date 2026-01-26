@@ -53,36 +53,38 @@ export function isHttpError(error: unknown): error is HttpError {
  * @returns A string representing the error message.
  */
 export function getErrorMessage(error: unknown): string {
-	try {
-		if (!error) return 'Unknown error';
+	if (error == null) return 'Unknown error';
 
-		if (typeof error === 'string') return error;
+	// string
+	if (typeof error === 'string') return error;
 
-		if (error instanceof Error) return error.message;
+	// Error
+	if (error instanceof Error) return error.message;
 
-		const e = error as any;
+	const e: any = error;
 
-		// HttpError-style
-		if (e?.body?.message) {
-			return String(e.body.message);
-		}
-
-		// Generic message
-		if (typeof e?.message === 'string') {
-			return e.message;
-		}
-
-		// Proper object stringify (not [object Object])
-		if (typeof error === 'object') {
-			const json = JSON.stringify(error);
-			if (json && json !== '{}') return json;
-		}
-
-		return String(error);
-	} catch {
-		return String(error);
+	// HttpError { status, body: { message } }
+	if (e?.body?.message != null) {
+		return String(e.body.message);
 	}
+
+	// { message: string }
+	if (typeof e?.message === 'string') {
+		return e.message;
+	}
+
+	// Any other object → must stringify
+	if (typeof error === 'object') {
+		try {
+			return JSON.stringify(error);
+		} catch {
+			return Object.prototype.toString.call(error);
+		}
+	}
+
+	return String(error);
 }
+
 
 
 
