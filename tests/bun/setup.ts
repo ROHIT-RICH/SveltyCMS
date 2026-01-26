@@ -169,12 +169,18 @@ function startServiceInitialization() {
 	return Promise.resolve(true);
 }
 
+function updateServiceHealth() {
+	// no-op mock, but required by tests
+	return true;
+}
+
 mock.module('@stores/system/index', () => ({
 	system,
 	setSystemState,
 	resetSystemState,
 	isServiceHealthy,
-	startServiceInitialization
+	startServiceInitialization,
+	updateServiceHealth 
 }));
 
 mock.module('@stores/system', () => ({
@@ -182,7 +188,8 @@ mock.module('@stores/system', () => ({
 	setSystemState,
 	resetSystemState,
 	isServiceHealthy,
-	startServiceInitialization
+	startServiceInitialization,
+	updateServiceHealth 
 }));
 
 // --------------------------------------
