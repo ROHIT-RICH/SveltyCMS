@@ -138,7 +138,7 @@ mock.module('@stores/screenSizeStore.svelte', () => ({
 }));
 
 // --------------------------------------
-// System store mock (FULLY compatible with tests)
+// System store mock
 // --------------------------------------
 
 type ServiceName = 'database' | 'auth' | 'cache' | 'contentManager' | 'themeManager';
@@ -204,12 +204,9 @@ function isSystemReady() {
 
 function startServiceInitialization(service: ServiceName) {
 	const svc = systemState.services[service];
-
-	// Count restart if already initialized before
 	if (svc.metrics.initializationStartedAt !== null) {
 		svc.metrics.restartCount++;
 	}
-
 	svc.metrics.initializationStartedAt = Date.now();
 	systemState.performanceMetrics.totalInitializations++;
 }
@@ -242,7 +239,6 @@ function updateServiceHealth(
 		svc.metrics.consecutiveFailures = 0;
 	}
 
-	// 🔥 This line fixes uptimePercentage test
 	svc.metrics.uptimePercentage =
 		((svc.metrics.healthCheckCount - svc.metrics.failureCount) /
 			svc.metrics.healthCheckCount) *
@@ -276,46 +272,39 @@ mock.module('@stores/system', () => ({
 }));
 
 // --------------------------------------
-// Real utils passthrough (FIXED)
+// Real utils passthrough (CORRECT FIX)
 // --------------------------------------
 
-mock.module('@utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('src/utils/dateUtils.ts', async () => await import(fromRoot('src/utils/dateUtils.ts'))); // <-- ADD THIS
-mock.module('@utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('@utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
-mock.module('@utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
+async function passthrough(path: string) {
+	const mod = await import(fromRoot(path));
+	return { ...mod };
+}
 
+mock.module('@utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
+mock.module('@utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
+mock.module('@utils/crypto', () => passthrough('src/utils/crypto.ts'));
+mock.module('@utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
+
+mock.module('src/utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
+mock.module('src/utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
+mock.module('src/utils/crypto', () => passthrough('src/utils/crypto.ts'));
+mock.module('src/utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
+
+mock.module('../../src/utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
+mock.module('../../src/utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
+mock.module('../../src/utils/crypto', () => passthrough('src/utils/crypto.ts'));
+mock.module('../../src/utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
+
+mock.module('../../src/utils/dateUtils.ts', () => passthrough('src/utils/dateUtils.ts'));
+mock.module('../../src/utils/errorHandling.ts', () => passthrough('src/utils/errorHandling.ts'));
+mock.module('../../src/utils/crypto.ts', () => passthrough('src/utils/crypto.ts'));
+mock.module('../../src/utils/languageUtils.ts', () => passthrough('src/utils/languageUtils.ts'));
 
 // --------------------------------------
-// Services passthrough (FIXED)
+// Services passthrough
 // --------------------------------------
 
-mock.module('@services/SecurityResponseService', () =>
-	import(fromRoot('src/services/SecurityResponseService.ts'))
-);
-
-
-// --------------------------------------
-// Fix relative imports used internally by Bun/tests
-// --------------------------------------
-
-mock.module('src/utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('src/utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('src/utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
-mock.module('src/utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
-
-
-mock.module('../../src/utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('../../src/utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('../../src/utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
-mock.module('../../src/utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
-
-// Extra safety: handle resolved extensions too
-mock.module('../../src/utils/dateUtils.ts', async () => await import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('../../src/utils/errorHandling.ts', async () => await import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('../../src/utils/crypto.ts', async () => await import(fromRoot('src/utils/crypto.ts')));
-mock.module('../../src/utils/languageUtils.ts', async () => await import(fromRoot('src/utils/languageUtils.ts')));
-
+mock.module('@services/SecurityResponseService', () => passthrough('src/services/SecurityResponseService.ts'));
 
 // --------------------------------------
 // Svelte 5 runes
