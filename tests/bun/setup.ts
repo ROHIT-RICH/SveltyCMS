@@ -101,7 +101,7 @@ mock.module('@stores/loadingStore.svelte', () => ({
 }));
 
 // --------------------------------------
-// Screen Size Store mock (FULLY test compliant)
+// Screen Size Store mock (FIXED)
 // --------------------------------------
 
 enum ScreenSize {
@@ -122,17 +122,35 @@ function getScreenSize(width: number): ScreenSize {
 	return ScreenSize.XXL;
 }
 
+function getScreenSizeName(width: number): string {
+	return getScreenSize(width);
+}
+
+// mimic real default export behavior
+const ScreenSizeStore = {
+	getScreenSize,
+	getScreenSizeName
+};
+
 mock.module('@stores/screenSizeStore.svelte', () => ({
 	ScreenSize,
 	getScreenSize,
-	default: ScreenSize
+	getScreenSizeName,
+	default: ScreenSizeStore
 }));
 
+
 // --------------------------------------
-// System store mock
+// System store mock (FIXED)
 // --------------------------------------
 
 let systemState: any = {};
+
+const system = {
+	get value() {
+		return systemState;
+	}
+};
 
 function setSystemState(val: any) {
 	systemState = val;
@@ -142,16 +160,22 @@ function resetSystemState() {
 	systemState = {};
 }
 
+function isServiceHealthy() {
+	return true;
+}
+
 mock.module('@stores/system/index', () => ({
-	system: systemState,
+	system,
 	setSystemState,
-	resetSystemState
+	resetSystemState,
+	isServiceHealthy
 }));
 
 mock.module('@stores/system', () => ({
-	system: systemState,
+	system,
 	setSystemState,
-	resetSystemState
+	resetSystemState,
+	isServiceHealthy
 }));
 
 // --------------------------------------
