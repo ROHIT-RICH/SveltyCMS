@@ -300,3 +300,7 @@ export function generateUUID(): string {
 export function isCryptoAvailable(): boolean {
 	return crypto !== null && argon2 !== null;
 }
+
+// --- Compatibility exports for tests ---
+export const randomBytes = crypto?.randomBytes;
+export const createHash = crypto?.createHash;
