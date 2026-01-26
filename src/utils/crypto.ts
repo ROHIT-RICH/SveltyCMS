@@ -301,14 +301,12 @@ export function isCryptoAvailable(): boolean {
 	return crypto !== null && argon2 !== null;
 }
 
-// --- Compatibility exports for tests ---
-import * as nodeCrypto from 'crypto';
+import nodeCrypto from 'crypto';
 
-// --- Compatibility exports for tests ---
 export function randomBytes(size: number) {
 	return nodeCrypto.randomBytes(size);
 }
 
-export function createHash(algorithm: string) {
-	return nodeCrypto.createHash(algorithm);
+export function createHash(algo: string) {
+	return nodeCrypto.createHash(algo);
 }
