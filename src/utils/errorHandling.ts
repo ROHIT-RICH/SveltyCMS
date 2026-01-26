@@ -53,10 +53,8 @@ export function isHttpError(error: unknown): error is HttpError {
 export function getErrorMessage(error: unknown): string {
 	if (!error) return 'Unknown error';
 
-	// String
 	if (typeof error === 'string') return error;
 
-	// Native Error
 	if (error instanceof Error) return error.message;
 
 	// HttpError: { status, body: { message } }
@@ -80,15 +78,13 @@ export function getErrorMessage(error: unknown): string {
 		return (error as any).message;
 	}
 
-	// Object fallback → force JSON stringify
+	// FORCE readable stringify (never returns [object Object])
 	if (typeof error === 'object') {
-		try {
-			const json = JSON.stringify(error);
-			if (json !== '{}' && json !== undefined) return json;
-		} catch {}
-		return Object.entries(error as any)
-			.map(([k, v]) => `${k}: ${String(v)}`)
-			.join(', ');
+		const entries = Object.entries(error as Record<string, unknown>);
+		if (entries.length > 0) {
+			return entries.map(([k, v]) => `${k}: ${String(v)}`).join(', ');
+		}
+		return JSON.stringify(error);
 	}
 
 	return String(error);
