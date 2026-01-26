@@ -388,6 +388,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 	return argon2.verify(hash, Buffer.from(normalized, 'utf8'));
 }
 
+
 export async function deriveKey(password: string, salt: Buffer): Promise<Buffer> {
 	if (!argon2) {
 		throw new Error('Argon2 not available - server-side only');
