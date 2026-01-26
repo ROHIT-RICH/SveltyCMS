@@ -162,3 +162,14 @@ describe('Language Utils - Edge Cases', () => {
 		expect(first).toBe(second);
 	});
 });
+
+export function getLanguageName(code: string, displayLocale: string = 'en'): string {
+	try {
+		if (!code) return '';
+
+		const display = new Intl.DisplayNames([displayLocale], { type: 'language' });
+		return display.of(code) || code;
+	} catch {
+		return code;
+	}
+}
