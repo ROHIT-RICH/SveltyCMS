@@ -54,24 +54,24 @@ export function getErrorMessage(error: unknown): string {
 	if (error instanceof Error) return error.message;
 	if (typeof error === 'string') return error;
 
-	// HttpError with body.message
-	if (
-		error &&
-		typeof error === 'object' &&
-		'status' in error &&
-		'body' in error &&
-		typeof (error as any).body?.message === 'string'
-	) {
-		return (error as any).body.message;
-	}
-
-	// Objects with message
-	if (error && typeof error === 'object' && 'message' in error) {
-		return String((error as any).message);
-	}
-
-	// Stringify objects (important for tests)
+	// Robust HttpError detection (fixes Bun test object)
 	if (error && typeof error === 'object') {
+		const anyErr = error as any;
+
+		if (
+			typeof anyErr.status === 'number' &&
+			anyErr.body &&
+			typeof anyErr.body.message === 'string'
+		) {
+			return anyErr.body.message;
+		}
+
+		// Objects with direct message
+		if (typeof anyErr.message === 'string') {
+			return anyErr.message;
+		}
+
+		// Proper stringify (fixes ERR_001 test)
 		try {
 			const json = JSON.stringify(error);
 			if (json && json !== '{}') return json;
@@ -80,6 +80,7 @@ export function getErrorMessage(error: unknown): string {
 
 	return String(error);
 }
+
 
 
 
