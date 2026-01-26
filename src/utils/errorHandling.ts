@@ -54,32 +54,31 @@ export function getErrorMessage(error: unknown): string {
 	if (error instanceof Error) return error.message;
 	if (typeof error === 'string') return error;
 
-	// Robust HttpError detection (fixes Bun test object)
 	if (error && typeof error === 'object') {
-		const anyErr = error as any;
+		// Force normalize (Bun-safe)
+		const obj = JSON.parse(JSON.stringify(error));
 
+		// HttpError case
 		if (
-			typeof anyErr.status === 'number' &&
-			anyErr.body &&
-			typeof anyErr.body.message === 'string'
+			typeof obj?.status === 'number' &&
+			typeof obj?.body?.message === 'string'
 		) {
-			return anyErr.body.message;
+			return obj.body.message;
 		}
 
-		// Objects with direct message
-		if (typeof anyErr.message === 'string') {
-			return anyErr.message;
+		// message property
+		if (typeof obj?.message === 'string') {
+			return obj.message;
 		}
 
-		// Proper stringify (fixes ERR_001 test)
-		try {
-			const json = JSON.stringify(error);
-			if (json && json !== '{}') return json;
-		} catch {}
+		// stringify objects
+		const json = JSON.stringify(obj);
+		if (json && json !== '{}') return json;
 	}
 
 	return String(error);
 }
+
 
 
 
