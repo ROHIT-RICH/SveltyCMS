@@ -51,27 +51,31 @@ export function isHttpError(error: unknown): error is HttpError {
  * @returns A string representing the error message.
  */
 export function getErrorMessage(error: unknown): string {
+	// Errors
 	if (error instanceof Error) return error.message;
+
+	// Strings
 	if (typeof error === 'string') return error;
 
-	if (error && typeof error === 'object') {
+	// Objects
+	if (error !== null && typeof error === 'object') {
 		const e = error as any;
 
 		// ✅ HttpError
 		if (
-			typeof e.status === 'number' &&
 			e.body &&
+			typeof e.body === 'object' &&
 			typeof e.body.message === 'string'
 		) {
 			return e.body.message;
 		}
 
-		// ✅ Object with message
+		// ✅ Direct message
 		if (typeof e.message === 'string') {
 			return e.message;
 		}
 
-		// ✅ Force stringify for objects (fixes ERR_001 test)
+		// ✅ Force stringify for tests like ERR_001
 		try {
 			const json = JSON.stringify(e);
 			if (json && json !== '{}') return json;
@@ -80,6 +84,7 @@ export function getErrorMessage(error: unknown): string {
 
 	return String(error);
 }
+
 
 
 
