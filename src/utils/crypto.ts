@@ -310,3 +310,18 @@ export function randomBytes(size: number) {
 export function createHash(algo: string) {
 	return nodeCrypto.createHash(algo);
 }
+
+
+export const __forceExports = {
+	randomBytes,
+	createHash,
+	hashPassword,
+	verifyPassword,
+	deriveKey,
+	encryptData,
+	decryptData,
+	createChecksum,
+	generateRandomToken,
+	generateUUID,
+	isCryptoAvailable
+};
