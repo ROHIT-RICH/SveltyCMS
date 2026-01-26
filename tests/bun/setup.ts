@@ -279,10 +279,11 @@ mock.module('@stores/system', () => ({
 // Real utils passthrough (FIXED)
 // --------------------------------------
 
-mock.module('@utils/dateUtils', () => import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('@utils/errorHandling', () => import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('@utils/crypto', () => import(fromRoot('src/utils/crypto.ts')));
-mock.module('@utils/languageUtils', () => import(fromRoot('src/utils/languageUtils.ts')));
+mock.module('@utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('@utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
+mock.module('@utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
+mock.module('@utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
+
 
 // --------------------------------------
 // Services passthrough (FIXED)
@@ -297,15 +298,17 @@ mock.module('@services/SecurityResponseService', () =>
 // Fix relative imports used internally by Bun/tests
 // --------------------------------------
 
-mock.module('../../src/utils/dateUtils', () => import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('../../src/utils/errorHandling', () => import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('../../src/utils/crypto', () => import(fromRoot('src/utils/crypto.ts')));
-mock.module('../../src/utils/languageUtils', () => import(fromRoot('src/utils/languageUtils.ts')));
+mock.module('../../src/utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('../../src/utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
+mock.module('../../src/utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
+mock.module('../../src/utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
+
 // Extra safety: handle resolved extensions too
-mock.module('../../src/utils/dateUtils.ts', () => import(fromRoot('src/utils/dateUtils.ts')));
-mock.module('../../src/utils/errorHandling.ts', () => import(fromRoot('src/utils/errorHandling.ts')));
-mock.module('../../src/utils/crypto.ts', () => import(fromRoot('src/utils/crypto.ts')));
-mock.module('../../src/utils/languageUtils.ts', () => import(fromRoot('src/utils/languageUtils.ts')));
+mock.module('../../src/utils/dateUtils.ts', async () => await import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('../../src/utils/errorHandling.ts', async () => await import(fromRoot('src/utils/errorHandling.ts')));
+mock.module('../../src/utils/crypto.ts', async () => await import(fromRoot('src/utils/crypto.ts')));
+mock.module('../../src/utils/languageUtils.ts', async () => await import(fromRoot('src/utils/languageUtils.ts')));
+
 
 // --------------------------------------
 // Svelte 5 runes
