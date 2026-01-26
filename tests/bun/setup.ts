@@ -280,6 +280,7 @@ mock.module('@stores/system', () => ({
 // --------------------------------------
 
 mock.module('@utils/dateUtils', async () => await import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('src/utils/dateUtils.ts', async () => await import(fromRoot('src/utils/dateUtils.ts'))); // <-- ADD THIS
 mock.module('@utils/errorHandling', async () => await import(fromRoot('src/utils/errorHandling.ts')));
 mock.module('@utils/crypto', async () => await import(fromRoot('src/utils/crypto.ts')));
 mock.module('@utils/languageUtils', async () => await import(fromRoot('src/utils/languageUtils.ts')));
