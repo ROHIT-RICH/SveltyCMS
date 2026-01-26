@@ -3,6 +3,10 @@
  */
 
 import { mock } from 'bun:test';
+import path from 'path';
+
+const root = process.cwd();
+const r = (p: string) => path.join(root, p);
 
 // --------------------------------------
 // SvelteKit mocks
@@ -38,7 +42,7 @@ mock.module('$app/paths', () => ({
 }));
 
 // --------------------------------------
-// Logger mocks (ALL variants)
+// Logger mocks
 // --------------------------------------
 
 const fakeLogger = {
@@ -56,7 +60,7 @@ mock.module('@utils/logger.server', () => ({ logger: fakeLogger }));
 mock.module('@utils/logger', () => ({ logger: fakeLogger }));
 
 // --------------------------------------
-// Loading Store mock (matches real behavior)
+// Loading Store mock
 // --------------------------------------
 
 class LoadingStore {
@@ -101,7 +105,7 @@ mock.module('@stores/loadingStore.svelte', () => ({
 }));
 
 // --------------------------------------
-// Screen Size Store mock (FIXED)
+// Screen Size Store mock
 // --------------------------------------
 
 enum ScreenSize {
@@ -126,25 +130,54 @@ function getScreenSizeName(width: number): string {
 	return getScreenSize(width);
 }
 
-// mimic real default export behavior
-const ScreenSizeStore = {
-	getScreenSize,
-	getScreenSizeName
-};
-
 mock.module('@stores/screenSizeStore.svelte', () => ({
 	ScreenSize,
 	getScreenSize,
 	getScreenSizeName,
-	default: ScreenSizeStore
+	default: { getScreenSize, getScreenSizeName }
 }));
 
-
 // --------------------------------------
-// System store mock (FIXED)
+// System store mock (FULLY compatible with tests)
 // --------------------------------------
 
-let systemState: any = {};
+type ServiceName = 'database' | 'auth' | 'cache' | 'contentManager' | 'themeManager';
+
+function createInitialState() {
+	const service = () => ({
+		status: 'initializing',
+		message: '',
+		error: null,
+		metrics: {
+			consecutiveFailures: 0,
+			failureCount: 0,
+			healthCheckCount: 0,
+			uptimePercentage: 100,
+			restartCount: 0,
+			initializationStartedAt: null,
+			initializationCompletedAt: null,
+			initializationDuration: null
+		}
+	});
+
+	return {
+		overallState: 'IDLE',
+		services: {
+			database: service(),
+			auth: service(),
+			cache: service(),
+			contentManager: service(),
+			themeManager: service()
+		},
+		performanceMetrics: {
+			stateTransitions: [],
+			totalInitializations: 0,
+			successfulInitializations: 0
+		}
+	};
+}
+
+let systemState = createInitialState();
 
 const system = {
 	get value() {
@@ -152,67 +185,97 @@ const system = {
 	}
 };
 
-function setSystemState(val: any) {
-	systemState = val;
+function getSystemState() {
+	return systemState;
 }
 
 function resetSystemState() {
-	systemState = {};
+	systemState = createInitialState();
 }
 
-function isServiceHealthy() {
-	return true;
-}
-
-function startServiceInitialization() {
-	// no-op, but must exist for tests
-	return Promise.resolve(true);
-}
-
-function updateServiceHealth() {
-	// no-op mock, but required by tests
-	return true;
+function setSystemState(state: string) {
+	systemState.performanceMetrics.stateTransitions.push({ to: state });
+	systemState.overallState = state;
 }
 
 function isSystemReady() {
-	return true;
+	return systemState.overallState === 'READY';
+}
+
+function startServiceInitialization(service: ServiceName) {
+	const svc = systemState.services[service];
+	svc.metrics.initializationStartedAt = Date.now();
+	systemState.performanceMetrics.totalInitializations++;
+}
+
+function updateServiceHealth(
+	service: ServiceName,
+	status: 'healthy' | 'unhealthy',
+	message?: string,
+	error?: string
+) {
+	const svc = systemState.services[service];
+	svc.status = status;
+	svc.message = message || '';
+	svc.error = error || null;
+
+	svc.metrics.healthCheckCount++;
+
+	if (status === 'unhealthy') {
+		svc.metrics.consecutiveFailures++;
+		svc.metrics.failureCount++;
+	} else {
+		if (svc.metrics.initializationStartedAt) {
+			svc.metrics.initializationCompletedAt = Date.now();
+			svc.metrics.initializationDuration =
+				svc.metrics.initializationCompletedAt - svc.metrics.initializationStartedAt;
+			systemState.performanceMetrics.successfulInitializations++;
+		}
+		svc.metrics.consecutiveFailures = 0;
+	}
+}
+
+function isServiceHealthy(service: ServiceName) {
+	return systemState.services[service].status === 'healthy';
 }
 
 mock.module('@stores/system/index', () => ({
 	system,
+	getSystemState,
 	setSystemState,
 	resetSystemState,
-	isServiceHealthy,
+	isSystemReady,
 	startServiceInitialization,
 	updateServiceHealth,
-	isSystemReady
+	isServiceHealthy
 }));
 
 mock.module('@stores/system', () => ({
 	system,
+	getSystemState,
 	setSystemState,
 	resetSystemState,
-	isServiceHealthy,
+	isSystemReady,
 	startServiceInitialization,
 	updateServiceHealth,
-	isSystemReady
+	isServiceHealthy
 }));
 
 // --------------------------------------
-// Real utils passthrough
+// Real utils passthrough (FIXED PATHS)
 // --------------------------------------
 
-mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
-mock.module('@utils/errorHandling', () => import('../../src/utils/errorHandling'));
-mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
-mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'));
+mock.module('@utils/dateUtils', () => import(r('src/utils/dateUtils')));
+mock.module('@utils/errorHandling', () => import(r('src/utils/errorHandling')));
+mock.module('@utils/crypto', () => import(r('src/utils/crypto')));
+mock.module('@utils/languageUtils', () => import(r('src/utils/languageUtils')));
 
 // --------------------------------------
-// Services passthrough
+// Services passthrough (FIXED PATHS)
 // --------------------------------------
 
 mock.module('@services/SecurityResponseService', () =>
-	import('../../src/services/SecurityResponseService')
+	import(r('src/services/SecurityResponseService'))
 );
 
 // --------------------------------------
