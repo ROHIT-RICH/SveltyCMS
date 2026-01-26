@@ -275,8 +275,8 @@ mock.module('@stores/system', () => ({
 // Proper Bun-safe passthrough
 // --------------------------------------
 
-async function passthrough(file: string) {
-	const mod = await import(fromRoot(file));
+async function passthrough(path: string) {
+	const mod = await import(fromRoot(path) + `?update=${Date.now()}`);
 	return { ...mod };
 }
 
