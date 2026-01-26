@@ -302,7 +302,13 @@ export function isCryptoAvailable(): boolean {
 }
 
 // --- Compatibility exports for tests ---
-import nodeCrypto from 'crypto';
+import * as nodeCrypto from 'crypto';
 
-export const randomBytes = nodeCrypto.randomBytes;
-export const createHash = nodeCrypto.createHash;
+// --- Compatibility exports for tests ---
+export function randomBytes(size: number) {
+	return nodeCrypto.randomBytes(size);
+}
+
+export function createHash(algorithm: string) {
+	return nodeCrypto.createHash(algorithm);
+}
