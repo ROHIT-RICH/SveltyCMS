@@ -54,26 +54,32 @@ export function getErrorMessage(error: unknown): string {
 	if (error instanceof Error) return error.message;
 	if (typeof error === 'string') return error;
 
-	// HttpError with body.message
-	if (isHttpError(error) && error.body?.message) {
-		return error.body.message;
+	// HttpError
+	if (
+		error &&
+		typeof error === 'object' &&
+		'status' in error &&
+		'body' in error &&
+		(error as any).body?.message
+	) {
+		return String((error as any).body.message);
 	}
 
-	// Objects with message
+	// Object with message
 	if (error && typeof error === 'object' && 'message' in error) {
 		return String((error as any).message);
 	}
 
-	// Objects without message → stringify clearly
+	// Plain object → stringify
 	if (error && typeof error === 'object') {
 		try {
-			const json = JSON.stringify(error);
-			if (json && json !== '{}') return json;
+			return JSON.stringify(error);
 		} catch {}
 	}
 
 	return String(error);
 }
+
 
 
 
