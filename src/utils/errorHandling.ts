@@ -64,7 +64,7 @@ export function getErrorMessage(error: unknown): string {
 		return String((error as any).message);
 	}
 
-	// Try stringify objects (for { code: 'ERR_001' })
+	// Objects without message → stringify clearly
 	if (error && typeof error === 'object') {
 		try {
 			const json = JSON.stringify(error);
@@ -74,6 +74,7 @@ export function getErrorMessage(error: unknown): string {
 
 	return String(error);
 }
+
 
 
 /**
