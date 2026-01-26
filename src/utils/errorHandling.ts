@@ -55,29 +55,32 @@ export function getErrorMessage(error: unknown): string {
 	if (typeof error === 'string') return error;
 
 	if (error && typeof error === 'object') {
-		// Force normalize (Bun-safe)
-		const obj = JSON.parse(JSON.stringify(error));
+		const e = error as any;
 
-		// HttpError case
+		// ✅ HttpError
 		if (
-			typeof obj?.status === 'number' &&
-			typeof obj?.body?.message === 'string'
+			typeof e.status === 'number' &&
+			e.body &&
+			typeof e.body.message === 'string'
 		) {
-			return obj.body.message;
+			return e.body.message;
 		}
 
-		// message property
-		if (typeof obj?.message === 'string') {
-			return obj.message;
+		// ✅ Object with message
+		if (typeof e.message === 'string') {
+			return e.message;
 		}
 
-		// stringify objects
-		const json = JSON.stringify(obj);
-		if (json && json !== '{}') return json;
+		// ✅ Force stringify for objects (fixes ERR_001 test)
+		try {
+			const json = JSON.stringify(e);
+			if (json && json !== '{}') return json;
+		} catch {}
 	}
 
 	return String(error);
 }
+
 
 
 
