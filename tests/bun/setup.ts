@@ -164,18 +164,25 @@ function isServiceHealthy() {
 	return true;
 }
 
+function startServiceInitialization() {
+	// no-op, but must exist for tests
+	return Promise.resolve(true);
+}
+
 mock.module('@stores/system/index', () => ({
 	system,
 	setSystemState,
 	resetSystemState,
-	isServiceHealthy
+	isServiceHealthy,
+	startServiceInitialization
 }));
 
 mock.module('@stores/system', () => ({
 	system,
 	setSystemState,
 	resetSystemState,
-	isServiceHealthy
+	isServiceHealthy,
+	startServiceInitialization
 }));
 
 // --------------------------------------
