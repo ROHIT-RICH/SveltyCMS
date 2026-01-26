@@ -5,7 +5,7 @@
 
 // @ts-expect-error - Bun test is available at runtime
 import { describe, it, expect } from 'bun:test';
-import { hashPassword, verifyPassword, generateRandomToken, createChecksum } from '@utils/crypto';
+import { hashPassword, verifyPassword, generateRandomToken, randomBytes, createHash, createChecksum } from '@utils/crypto';
 
 describe('Crypto Utils - Password Hashing', () => {
 	it('should hash a password', async () => {
@@ -222,3 +222,26 @@ describe('Crypto Utils - Security Properties', () => {
 		expect(Math.abs(duration1 - duration2)).toBeLessThan(1000);
 	});
 });
+
+
+// --- Password hashing (Bun has native argon2 support) ---
+export async function hashPassword(password: string): Promise<string> {
+	return await Bun.password.hash(password, {
+		algorithm: 'argon2id'
+	});
+}
+
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+	return await Bun.password.verify(password, hash);
+}
+
+// --- Random token ---
+export function generateRandomToken(bytes: number = 32): string {
+	return randomBytes(bytes).toString('hex');
+}
+
+// --- Checksum (SHA-256) ---
+export function createChecksum(data: unknown): string {
+	const input = typeof data === 'string' ? data : JSON.stringify(data);
+	return createHash('sha256').update(input).digest('hex');
+}
