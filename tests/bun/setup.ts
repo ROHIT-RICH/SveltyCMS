@@ -174,13 +174,18 @@ function updateServiceHealth() {
 	return true;
 }
 
+function isSystemReady() {
+	return true;
+}
+
 mock.module('@stores/system/index', () => ({
 	system,
 	setSystemState,
 	resetSystemState,
 	isServiceHealthy,
 	startServiceInitialization,
-	updateServiceHealth 
+	updateServiceHealth,
+	isSystemReady
 }));
 
 mock.module('@stores/system', () => ({
@@ -189,7 +194,8 @@ mock.module('@stores/system', () => ({
 	resetSystemState,
 	isServiceHealthy,
 	startServiceInitialization,
-	updateServiceHealth 
+	updateServiceHealth,
+	isSystemReady
 }));
 
 // --------------------------------------
