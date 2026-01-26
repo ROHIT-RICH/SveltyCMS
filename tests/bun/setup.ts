@@ -272,39 +272,23 @@ mock.module('@stores/system', () => ({
 }));
 
 // --------------------------------------
-// Real utils passthrough (CORRECT FIX)
+// Proper Bun-safe passthrough
 // --------------------------------------
 
-async function passthrough(path: string) {
-	const mod = await import(fromRoot(path));
+async function passthrough(file: string) {
+	const mod = await import(fromRoot(file));
 	return { ...mod };
 }
 
+// Only mock the aliases actually used in tests
 mock.module('@utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
 mock.module('@utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
 mock.module('@utils/crypto', () => passthrough('src/utils/crypto.ts'));
 mock.module('@utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
 
-mock.module('src/utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
-mock.module('src/utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
-mock.module('src/utils/crypto', () => passthrough('src/utils/crypto.ts'));
-mock.module('src/utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
-
-mock.module('../../src/utils/dateUtils', () => passthrough('src/utils/dateUtils.ts'));
-mock.module('../../src/utils/errorHandling', () => passthrough('src/utils/errorHandling.ts'));
-mock.module('../../src/utils/crypto', () => passthrough('src/utils/crypto.ts'));
-mock.module('../../src/utils/languageUtils', () => passthrough('src/utils/languageUtils.ts'));
-
-mock.module('../../src/utils/dateUtils.ts', () => passthrough('src/utils/dateUtils.ts'));
-mock.module('../../src/utils/errorHandling.ts', () => passthrough('src/utils/errorHandling.ts'));
-mock.module('../../src/utils/crypto.ts', () => passthrough('src/utils/crypto.ts'));
-mock.module('../../src/utils/languageUtils.ts', () => passthrough('src/utils/languageUtils.ts'));
-
-// --------------------------------------
-// Services passthrough
-// --------------------------------------
-
-mock.module('@services/SecurityResponseService', () => passthrough('src/services/SecurityResponseService.ts'));
+mock.module('@services/SecurityResponseService', () =>
+	passthrough('src/services/SecurityResponseService.ts')
+);
 
 // --------------------------------------
 // Svelte 5 runes
