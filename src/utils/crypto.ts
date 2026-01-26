@@ -376,14 +376,15 @@ export async function hashPassword(password: string): Promise<string> {
 	});
 }
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-	if (!argon2) {
-		throw new Error('Argon2 not available - server-side only');
-	}
+export async function hashPassword(password: string): Promise<string> {
+	if (!argon2) throw new Error('Argon2 not available - server-side only');
 
-	const normalized = password === '' ? EMPTY_PASSWORD : password;
+	const normalized = `__pw__${password}`;
 
-	return argon2.verify(hash, Buffer.from(normalized, 'utf8'));
+	return argon2.hash(normalized, {
+		...argon2Config,
+		type: argon2.argon2id
+	});
 }
 
 
