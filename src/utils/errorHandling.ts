@@ -51,46 +51,47 @@ export function isHttpError(error: unknown): error is HttpError {
  * @returns A string representing the error message.
  */
 export function getErrorMessage(error: unknown): string {
-	// Always handle Error first
-	if (error instanceof Error) {
-		return error.message;
-	}
+	if (!error) return 'Unknown error';
 
 	// Strings
-	if (typeof error === 'string') {
-		return error;
+	if (typeof error === 'string') return error;
+
+	// Native Error
+	if (error instanceof Error) return error.message;
+
+	// HttpError-like (status + body.message)
+	if (
+		typeof error === 'object' &&
+		error !== null &&
+		'body' in error &&
+		typeof (error as any).body === 'object' &&
+		(error as any).body?.message
+	) {
+		return String((error as any).body.message);
 	}
 
-	// Objects
-	if (error && typeof error === 'object') {
-		const obj = error as any;
+	// Object with message property
+	if (
+		typeof error === 'object' &&
+		error !== null &&
+		'message' in error &&
+		typeof (error as any).message === 'string'
+	) {
+		return (error as any).message;
+	}
 
-		// HttpError case
-		if (
-			obj.body &&
-			typeof obj.body === 'object' &&
-			typeof obj.body.message === 'string'
-		) {
-			return obj.body.message;
-		}
-
-		// Object with message
-		if (typeof obj.message === 'string') {
-			return obj.message;
-		}
-
-		// Force stringify (for ERR_001 test)
+	// Fallback: stringify object properly
+	if (typeof error === 'object') {
 		try {
-			const json = JSON.stringify(obj);
-			if (json && json !== '{}' && json !== '[object Object]') {
-				return json;
-			}
-		} catch {}
+			return JSON.stringify(error);
+		} catch {
+			return String(error);
+		}
 	}
 
-	// Absolute fallback
 	return String(error);
 }
+
 
 
 
