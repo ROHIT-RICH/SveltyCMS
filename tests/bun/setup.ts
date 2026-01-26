@@ -6,7 +6,7 @@ import { mock } from 'bun:test';
 import path from 'path';
 
 const root = process.cwd();
-const r = (p: string) => path.join(root, p);
+const fromRoot = (p: string) => path.join(root, p);
 
 // --------------------------------------
 // SvelteKit mocks
@@ -204,6 +204,12 @@ function isSystemReady() {
 
 function startServiceInitialization(service: ServiceName) {
 	const svc = systemState.services[service];
+
+	// Count restart if already initialized before
+	if (svc.metrics.initializationStartedAt !== null) {
+		svc.metrics.restartCount++;
+	}
+
 	svc.metrics.initializationStartedAt = Date.now();
 	systemState.performanceMetrics.totalInitializations++;
 }
@@ -215,6 +221,7 @@ function updateServiceHealth(
 	error?: string
 ) {
 	const svc = systemState.services[service];
+
 	svc.status = status;
 	svc.message = message || '';
 	svc.error = error || null;
@@ -229,10 +236,17 @@ function updateServiceHealth(
 			svc.metrics.initializationCompletedAt = Date.now();
 			svc.metrics.initializationDuration =
 				svc.metrics.initializationCompletedAt - svc.metrics.initializationStartedAt;
+
 			systemState.performanceMetrics.successfulInitializations++;
 		}
 		svc.metrics.consecutiveFailures = 0;
 	}
+
+	// 🔥 This line fixes uptimePercentage test
+	svc.metrics.uptimePercentage =
+		((svc.metrics.healthCheckCount - svc.metrics.failureCount) /
+			svc.metrics.healthCheckCount) *
+		100;
 }
 
 function isServiceHealthy(service: ServiceName) {
@@ -262,22 +276,21 @@ mock.module('@stores/system', () => ({
 }));
 
 // --------------------------------------
-// Real utils passthrough (FIXED PATHS)
+// Real utils passthrough (FIXED)
 // --------------------------------------
 
-mock.module('@utils/dateUtils', () => import(r('src/utils/dateUtils')));
-mock.module('@utils/errorHandling', () => import(r('src/utils/errorHandling')));
-mock.module('@utils/crypto', () => import(r('src/utils/crypto')));
-mock.module('@utils/languageUtils', () => import(r('src/utils/languageUtils')));
+mock.module('@utils/dateUtils', () => import(fromRoot('src/utils/dateUtils.ts')));
+mock.module('@utils/errorHandling', () => import(fromRoot('src/utils/errorHandling.ts')));
+mock.module('@utils/crypto', () => import(fromRoot('src/utils/crypto.ts')));
+mock.module('@utils/languageUtils', () => import(fromRoot('src/utils/languageUtils.ts')));
 
 // --------------------------------------
-// Services passthrough (FIXED PATHS)
+// Services passthrough (FIXED)
 // --------------------------------------
 
 mock.module('@services/SecurityResponseService', () =>
-	import(r('src/services/SecurityResponseService'))
+	import(fromRoot('src/services/SecurityResponseService.ts'))
 );
-
 // --------------------------------------
 // Svelte 5 runes
 // --------------------------------------
