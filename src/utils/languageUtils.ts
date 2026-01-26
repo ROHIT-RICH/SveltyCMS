@@ -47,3 +47,8 @@ export function getLanguageName(tag: string, displayLocale?: string): string {
 		return tag;
 	}
 }
+
+
+export const __forceExports = {
+	getLanguageName
+};
