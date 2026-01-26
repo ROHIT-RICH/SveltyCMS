@@ -267,17 +267,17 @@ mock.module('@stores/system', () => ({
 // Real utils passthrough
 // --------------------------------------
 
-mock.module('@utils/dateUtils', () => import('../../src/utils/dateUtils'));
-mock.module('@utils/errorHandling', () => import('../../src/utils/errorHandling'));
-mock.module('@utils/crypto', () => import('../../src/utils/crypto'));
-mock.module('@utils/languageUtils', () => import('../../src/utils/languageUtils'));
+mock.module('@utils/dateUtils', () => import('../../../src/utils/dateUtils'));
+mock.module('@utils/errorHandling', () => import('../../../src/utils/errorHandling'));
+mock.module('@utils/crypto', () => import('../../../src/utils/crypto'));
+mock.module('@utils/languageUtils', () => import('../../../src/utils/languageUtils'));
 
 // --------------------------------------
 // Services passthrough
 // --------------------------------------
 
 mock.module('@services/SecurityResponseService', () =>
-	import('../../src/services/SecurityResponseService')
+	import('../../../src/services/SecurityResponseService')
 );
 
 // --------------------------------------
