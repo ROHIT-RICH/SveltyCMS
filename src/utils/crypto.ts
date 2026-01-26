@@ -302,5 +302,7 @@ export function isCryptoAvailable(): boolean {
 }
 
 // --- Compatibility exports for tests ---
-export const randomBytes = crypto?.randomBytes;
-export const createHash = crypto?.createHash;
+import nodeCrypto from 'crypto';
+
+export const randomBytes = nodeCrypto.randomBytes;
+export const createHash = nodeCrypto.createHash;
