@@ -51,28 +51,30 @@ export function isHttpError(error: unknown): error is HttpError {
  * @returns A string representing the error message.
  */
 export function getErrorMessage(error: unknown): string {
-	if (error instanceof Error) {
-		return error.message;
-	}
-	if (typeof error === 'string') {
-		return error;
-	}
+	if (error instanceof Error) return error.message;
+	if (typeof error === 'string') return error;
+
+	// HttpError with body.message
 	if (isHttpError(error) && error.body?.message) {
 		return error.body.message;
 	}
-	if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
-		return (error as any).message;
+
+	// Objects with message
+	if (error && typeof error === 'object' && 'message' in error) {
+		return String((error as any).message);
 	}
-	try {
-		const stringified = JSON.stringify(error);
-		if (stringified !== '{}') {
-			return stringified;
-		}
-	} catch {
-		// Fallback if stringify fails (e.g., circular references)
+
+	// Try stringify objects (for { code: 'ERR_001' })
+	if (error && typeof error === 'object') {
+		try {
+			const json = JSON.stringify(error);
+			if (json && json !== '{}') return json;
+		} catch {}
 	}
+
 	return String(error);
 }
+
 
 /**
  * Wraps an unknown error in an AppError, normalizing it for consistent handling.
