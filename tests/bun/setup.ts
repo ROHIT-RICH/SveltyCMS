@@ -299,3 +299,17 @@ mock.module('@services/SecurityResponseService', () =>
 (globalThis as any).$effect = () => {};
 (globalThis as any).$effect.root = (fn: any) => fn();
 (globalThis as any).$props = () => ({});
+
+
+// --------------------------------------
+// Bun.password patch (fix empty password test)
+// --------------------------------------
+
+if ((globalThis as any).Bun?.password?.hash) {
+	const originalHash = (globalThis as any).Bun.password.hash;
+
+	(globalThis as any).Bun.password.hash = async (password: string, options: any) => {
+		const safe = password === '' ? ' ' : password;
+		return originalHash(safe, options);
+	};
+}
