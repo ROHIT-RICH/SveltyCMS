@@ -57,6 +57,8 @@ jobs:
 
       - name: Run Unit Tests
         run: bun run test:unit
+        env:
+          NODE_PATH: ./src
 
   # ------------------------------------------------------------------
   # 2. Integration Tests (Requires Server + MongoDB)
