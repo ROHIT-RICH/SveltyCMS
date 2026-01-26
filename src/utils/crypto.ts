@@ -331,7 +331,7 @@
 // 	isCryptoAvailable
 // };
 
-
+console.log('LOADED crypto.ts from', import.meta.url);
 import { logger } from '@utils/logger';
 
 const EMPTY_PASSWORD = '__EMPTY_PASSWORD_INTERNAL__';
