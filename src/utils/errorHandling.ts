@@ -73,14 +73,17 @@ export function getErrorMessage(error: unknown): string {
 		return e.message;
 	}
 
-	// Any other object → must stringify
 	if (typeof error === 'object') {
-		try {
-			return JSON.stringify(error);
-		} catch {
-			return Object.prototype.toString.call(error);
-		}
-	}
+	try {
+		const json = JSON.stringify(error);
+		if (json && json !== '{}') return json;
+	} catch {}
+
+	// safer fallback that exposes keys
+	return Object.entries(error as Record<string, unknown>)
+		.map(([k, v]) => `${k}: ${String(v)}`)
+		.join(', ');
+}
 
 	return String(error);
 }
