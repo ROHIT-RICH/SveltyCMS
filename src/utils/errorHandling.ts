@@ -61,29 +61,33 @@ export function getErrorMessage(error: unknown): string {
 	// Error
 	if (error instanceof Error) return error.message;
 
-	const e: any = error;
-
-	// HttpError { status, body: { message } }
-	if (e?.body?.message != null) {
-		return String(e.body.message);
-	}
-
-	// { message: string }
-	if (typeof e?.message === 'string') {
-		return e.message;
-	}
-
+	// object
 	if (typeof error === 'object') {
-	try {
-		const json = JSON.stringify(error);
-		if (json && json !== '{}') return json;
-	} catch {}
+		const e = error as any;
 
-	// safer fallback that exposes keys
-	return Object.entries(error as Record<string, unknown>)
-		.map(([k, v]) => `${k}: ${String(v)}`)
-		.join(', ');
-}
+		// HttpError { status, body: { message } }
+		if (e.body && typeof e.body.message === 'string') {
+			return e.body.message;
+		}
+
+		// { message: string }
+		if (typeof e.message === 'string') {
+			return e.message;
+		}
+
+		// explicit stringify with fallback that always exposes keys
+		try {
+			const json = JSON.stringify(e);
+			if (json && json !== '{}' && json !== '[object Object]') {
+				return json;
+			}
+		} catch {}
+
+		// final guaranteed readable fallback
+		return Object.keys(e)
+			.map(k => `${k}: ${String(e[k])}`)
+			.join(', ');
+	}
 
 	return String(error);
 }
