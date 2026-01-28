@@ -1,3 +1,5 @@
+console.log('LOADED errorHandling.ts from', import.meta.url);
+
 /**
  * @file src/utils/errorHandling.ts
  * @description Robust error handling utilities for Svelte 5 applications.
@@ -51,28 +53,49 @@ export function isHttpError(error: unknown): error is HttpError {
  * @returns A string representing the error message.
  */
 export function getErrorMessage(error: unknown): string {
-	if (error instanceof Error) {
-		return error.message;
-	}
-	if (typeof error === 'string') {
-		return error;
-	}
-	if (isHttpError(error) && error.body?.message) {
-		return error.body.message;
-	}
-	if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
-		return (error as any).message;
-	}
-	try {
-		const stringified = JSON.stringify(error);
-		if (stringified !== '{}') {
-			return stringified;
+	if (error == null) return 'Unknown error';
+
+	// string
+	if (typeof error === 'string') return error;
+
+	// Error
+	if (error instanceof Error) return error.message;
+
+	// object
+	if (typeof error === 'object') {
+		const e = error as any;
+
+		// HttpError { status, body: { message } }
+		if (e.body && typeof e.body.message === 'string') {
+			return e.body.message;
 		}
-	} catch {
-		// Fallback if stringify fails (e.g., circular references)
+
+		// { message: string }
+		if (typeof e.message === 'string') {
+			return e.message;
+		}
+
+		// explicit stringify with fallback that always exposes keys
+		try {
+			const json = JSON.stringify(e);
+			if (json && json !== '{}' && json !== '[object Object]') {
+				return json;
+			}
+		} catch {}
+
+		// final guaranteed readable fallback
+		return Object.keys(e)
+			.map(k => `${k}: ${String(e[k])}`)
+			.join(', ');
 	}
+
 	return String(error);
 }
+
+
+
+
+
 
 /**
  * Wraps an unknown error in an AppError, normalizing it for consistent handling.

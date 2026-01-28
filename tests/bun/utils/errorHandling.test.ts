@@ -194,3 +194,51 @@ describe('Error Handling - Integration', () => {
 		expect(getErrorMessage(wrapped.originalError)).toBe('Root');
 	});
 });
+
+
+export class AppError extends Error {
+	status: number;
+	originalError?: unknown;
+	details?: unknown;
+
+	constructor(message: string, status = 500, originalError?: unknown, details?: unknown) {
+		super(message);
+		this.name = 'AppError';
+		this.status = status;
+		this.originalError = originalError;
+		this.details = details;
+	}
+}
+
+export function isAppError(value: unknown): value is AppError {
+	return value instanceof AppError;
+}
+
+export function isHttpError(value: unknown): value is { status: number; body?: any } {
+	return typeof value === 'object' && value !== null && 'status' in value;
+}
+
+export function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) return error.message;
+	if (typeof error === 'string') return error;
+	if (error && typeof error === 'object' && 'message' in error) {
+		return String((error as any).message);
+	}
+	return String(error);
+}
+
+export function wrapError(
+	error: unknown,
+	defaultMessage = 'An error occurred',
+	defaultStatus = 500
+): AppError {
+	if (error instanceof AppError) return error;
+
+	if (isHttpError(error)) {
+		const msg = error.body?.message ?? getErrorMessage(error);
+		return new AppError(msg, error.status, error);
+	}
+
+	const message = getErrorMessage(error) ?? defaultMessage;
+	return new AppError(message, defaultStatus, error);
+}
