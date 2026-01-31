@@ -14,6 +14,36 @@
  *
  * Usage: Automatically loaded via package.json test scripts with --preload flag
  */
+
+import { register } from "tsconfig-paths";
+import path from "path";
+
+// Force Bun to resolve aliases correctly during tests
+register({
+  baseUrl: path.resolve("./"),
+  paths: {
+    "@paraglide/*": ["src/paraglide/*"],
+    "@api/*": ["src/routes/api/*"],
+    "@auth/*": ["src/databases/auth/*"],
+    "@collections/*": ["config/collections/*"],
+    "@components/*": ["src/components/*"],
+    "@content/*": ["src/content/*"],
+    "@databases/*": ["src/databases/*"],
+    "@hooks/*": ["src/hooks/*"],
+    "@root/*": ["*"],
+    "@services/*": ["src/services/*"],
+    "@src/*": ["src/*"],
+    "@static/*": ["static/*"],
+    "@stores/*": ["src/stores/*"],
+    "@themes/*": ["src/themes/*"],
+    "@types/*": ["src/types/*"],
+    "@utils/*": ["src/utils/*"],
+    "@widgets/*": ["src/widgets/*"],
+  },
+});
+
+
+
 import { mock } from 'bun:test';
 
 // Mock $app/environment
