@@ -1,4 +1,4 @@
-<p style="border: none; margin-bottom:0; padding-bottom: 0;" align="center">
+  <p style="border: none; margin-bottom:0; padding-bottom: 0;" align="center">
   <img width="200" alt="SveltyCMS logo" src="https://raw.githubusercontent.com/SveltyCMS/SveltyCMS/main/static/SveltyCMS.png">
 </p>
 
