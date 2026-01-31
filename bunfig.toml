@@ -21,3 +21,6 @@ alias = {
   "@utils" = "./src/utils",
   "@widgets" = "./src/widgets"
 }
+
+[loader]
+".svelte" = "js"
